@@ -1,0 +1,17 @@
+name: show-env
+on:
+  workflow_dispatch:
+
+jobs:
+
+  env:
+    uses: ./.github/workflows/x-env.yml
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+  show-env:
+    runs-on: ubuntu-latest
+    needs: env
+    steps:
+      - id: debug
+        run: echo "${{ toJSON(needs.env.outputs) }} | jq"

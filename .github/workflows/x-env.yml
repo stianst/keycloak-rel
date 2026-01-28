@@ -59,7 +59,7 @@ jobs:
       release-bot-name: ${{ env.release-bot-name }}
       last-version: ${{ env.last-version }}
       previous-version: ${{ env.previous-version }}
-      next-version: ${{ env.next_version }}
+      next-version: ${{ env.next-version }}
       branch: ${{ env.branch }}
       stream: ${{ env.stream }}
     steps:

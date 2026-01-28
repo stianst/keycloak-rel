@@ -14,4 +14,4 @@ jobs:
     needs: env
     steps:
       - id: debug
-        run: echo "${{ toJSON(needs.env.outputs) }} | jq"
+        run: echo "${{ toJSON(needs.env.outputs) }}"

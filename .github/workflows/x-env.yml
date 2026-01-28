@@ -3,12 +3,21 @@ name: X Environment setup
 on:
   workflow_call:
     outputs:
+      branch:
+        description: "Release branch"
+        value: ${{ jobs.env.outputs.branch }}
+      stream:
+        description: "Release stream"
+        value: ${{ jobs.env.outputs.stream }}
       last-version:
         description: "Most recent release"
         value: ${{ jobs.env.outputs.last-version }}
       previous-version:
         description: "Previous release"
         value: ${{ jobs.env.outputs.previous-version }}
+      next-version:
+        description: "Next release"
+        value: ${{ jobs.env.outputs.next-version }}
       gh-org:
         description: "GitHub Organization"
         value: ${{ jobs.env.outputs.gh-org }}
@@ -84,13 +93,7 @@ jobs:
           else
             next_version="$stream.0"
           fi
-          
-          echo "branch=$branch"
-          echo "stream=$stream"
-          echo "last-version=$last_version"
-          echo "next-version=$next_version"
-          echo "previous-version=$previous_version"
-          
+
           echo "branch=$branch" >> $GITHUB_ENV
           echo "stream=$stream" >> $GITHUB_ENV
           echo "last-version=$last_version" >> $GITHUB_ENV

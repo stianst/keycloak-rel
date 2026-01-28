@@ -69,6 +69,6 @@ jobs:
           cat .github/env/${{ github.repository_owner }} | sed -r '/^\s*$/d' >> $GITHUB_ENV
       - id: versions
         run: |
-          .github/scripts/versions.sh ${{ env.gh-org }} ${{ github.ref_name }}  >> $GITHUB_ENV
+          .github/scripts/versions.sh ${{ env.gh-org }} ${{ github.ref_name }} | sed -r '/^\s*$/d' >> $GITHUB_ENV
         env:
           GH_TOKEN: ${{ secrets.GH_TOKEN }}

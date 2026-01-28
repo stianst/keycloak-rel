@@ -20,14 +20,14 @@ jobs:
       - name: Respin
         run: |
           CONTAINER_TOOL="docker" 
-          ORIGINAL_IMAGE="quay.io/keycloak/keycloak:latest"
+          ORIGINAL_IMAGE="quay.io/${{ needs.env.outputs.quay-org }}/keycloak:latest"
           
           cd $(mktemp -d -t kc-container-scan-XXXX)
           
           echo -n "Pulling image: "
           $CONTAINER_TOOL pull -q $ORIGINAL_IMAGE
           
-          CONTAINER_VERSION=$($CONTAINER_TOOL image inspect quay.io/keycloak/keycloak:latest | jq -r '.[].Config.Labels.version')
+          CONTAINER_VERSION=$($CONTAINER_TOOL image inspect $ORIGINAL_IMAGE | jq -r '.[].Config.Labels.version')
           RELEASE_BRANCH=$(echo $CONTAINER_VERSION | awk -F '.' '{ print "release/"$1"."$2 }')
           
           echo "Container version: $CONTAINER_VERSION"
@@ -36,8 +36,8 @@ jobs:
           echo ""
           echo -n "Building mock image: "
           
-          curl -s -o Dockerfile https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/$RELEASE_BRANCH/quarkus/container/Dockerfile
-          curl -s -o ubi-null.sh https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/$RELEASE_BRANCH/quarkus/container/ubi-null.sh
+          curl -s -o Dockerfile https://raw.githubusercontent.com/${{ needs.env.outputs.gh-org }}/keycloak/refs/heads/$RELEASE_BRANCH/quarkus/container/Dockerfile
+          curl -s -o ubi-null.sh https://raw.githubusercontent.com/${{ needs.env.outputs.gh-org }}/keycloak/refs/heads/$RELEASE_BRANCH/quarkus/container/ubi-null.sh
           
           mkdir keycloak-empty
           tar cfz keycloak-empty.tar.gz keycloak-empty

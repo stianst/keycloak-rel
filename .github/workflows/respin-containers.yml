@@ -12,18 +12,6 @@ jobs:
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
-  versions:
-    runs-on: ubuntu-latest
-    outputs:
-      lastVersion: ${{ steps.versions.lastVersion }}
-      previousVersion: ${{ steps.versions.previousVersion }}
-    steps:
-      - id: versions
-        run: |
-          LAST_TWO_VERSIONS=$(gh release -R keycloak/keycloak list --json tagName | jq -r '.[].tagName' | grep -v nightly | sort -V -r | head -n 2)
-          LAST_VERSION=$( echo $LAST_TWO_VERSIONS | head -n 1)
-          PREVIOUS_VERSION=$( echo $LAST_TWO_VERSIONS | tail -n 1)
-
   respin-number:
     runs-on: ubuntu-latest
     needs: [env]

@@ -85,6 +85,12 @@ jobs:
             next_version="$stream.0"
           fi
           
+          echo "branch=$branch"
+          echo "stream=$stream"
+          echo "last-version=$last_version"
+          echo "next-version=$next_version"
+          echo "previous-version=$previous_version"
+          
           echo "branch=$branch" >> $GITHUB_ENV
           echo "stream=$stream" >> $GITHUB_ENV
           echo "last-version=$last_version" >> $GITHUB_ENV

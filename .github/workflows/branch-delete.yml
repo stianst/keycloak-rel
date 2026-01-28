@@ -26,6 +26,8 @@ jobs:
 
   env:
     uses: ./.github/workflows/x-env.yml
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   delete-workflow-branch:
     name: Delete workflow branch

@@ -17,6 +17,8 @@ jobs:
 
   env:
     uses: ./.github/workflows/x-env.yml
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   sync-branches:
     name: Rebase from upstream

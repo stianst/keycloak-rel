@@ -18,6 +18,8 @@ jobs:
   env:
     if: github.event_name != 'schedule' || github.repository_owner == 'keycloak-rel'
     uses: ./.github/workflows/x-env.yml
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   create-tags:
     name: Create tags

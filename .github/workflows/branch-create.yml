@@ -23,6 +23,8 @@ jobs:
 
   env:
     uses: ./.github/workflows/x-env.yml
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   create-workflow-branch:
     name: Create workflow branch

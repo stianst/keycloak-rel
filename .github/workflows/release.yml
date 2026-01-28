@@ -32,6 +32,8 @@ jobs:
 
   env:
     uses: ./.github/workflows/x-env.yml
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
 
   create-tags:
     name: Create tags

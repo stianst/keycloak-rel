@@ -1,0 +1,82 @@
+name: Re-spin Containers with fixed CVEs
+on: workflow_dispatch
+
+permissions:
+  actions: write
+
+jobs:
+  respin:
+    runs-on: ubuntu-latest
+    # if: github.repository_owner == 'keycloak-rel'
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3.0.0
+
+      - name: Trivy Setup
+        uses: aquasecurity/setup-trivy@e07451d2e059ed86c2870430ea286b3a9e0bf241 # v0.2.5
+        with:
+          cache: true
+
+      - name: Respin
+        run: |
+          CONTAINER_TOOL="docker" 
+          ORIGINAL_IMAGE="quay.io/keycloak/keycloak:latest"
+          
+          cd $(mktemp -d -t kc-container-scan-XXXX)
+          
+          echo -n "Pulling image: "
+          $CONTAINER_TOOL pull -q $ORIGINAL_IMAGE
+          
+          CONTAINER_VERSION=$($CONTAINER_TOOL image inspect quay.io/keycloak/keycloak:latest | jq -r '.[].Config.Labels.version')
+          RELEASE_BRANCH=$(echo $CONTAINER_VERSION | awk -F '.' '{ print "release/"$1"."$2 }')
+          
+          echo "Container version: $CONTAINER_VERSION"
+          echo "Release branch: $RELEASE_BRANCH"
+          
+          echo ""
+          echo -n "Building mock image: "
+          
+          curl -s -o Dockerfile https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/$RELEASE_BRANCH/quarkus/container/Dockerfile
+          curl -s -o ubi-null.sh https://raw.githubusercontent.com/keycloak/keycloak/refs/heads/$RELEASE_BRANCH/quarkus/container/ubi-null.sh
+          
+          mkdir keycloak-empty
+          tar cfz keycloak-empty.tar.gz keycloak-empty
+          
+          $CONTAINER_TOOL build -q --build-arg KEYCLOAK_DIST=keycloak-empty.tar.gz -t keycloak-scan-tmp .
+          
+          echo ""
+          
+          echo -n "Scanning $ORIGINAL_IMAGE: "
+          trivy image -q --scanners vuln $ORIGINAL_IMAGE -s MEDIUM,HIGH,CRITICAL --skip-dirs /opt/keycloak --format json > report-current.json
+          echo "report-current.json"
+          
+          echo -n "Scanning mock image: "
+          trivy image -q --scanners vuln keycloak-scan-tmp -s MEDIUM,HIGH,CRITICAL --skip-dirs /opt/keycloak --format json > report-updated.json
+          echo "report-updated.json"
+          
+          list_resolved_cves() {
+            for CVE in $(jq -r '.Results[].Vulnerabilities[] | .VulnerabilityID' report-current.json); do
+              jq -e '.Results[].Vulnerabilities[] | select(.VulnerabilityID == "'$CVE'")' report-updated.json &>/dev/null || echo $CVE
+            done
+          }
+          
+          echo ""
+          
+          RESOLVED_CVES=$(list_resolved_cves)
+          
+          if [ "$RESOLVED_CVES" == "" ]; then
+            echo "NO FIXES AVAILABLE!" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "RESOLVED CVEs:" >> $GITHUB_STEP_SUMMARY
+            echo "--------------" >> $GITHUB_STEP_SUMMARY
+            for CVE in $RESOLVED_CVES; do
+              jq -r '.Results[].Vulnerabilities[] | select(.VulnerabilityID == "'$CVE'") | "\(.VulnerabilityID) (\(.Severity) \(.PkgName))"' report-current.json >> $GITHUB_STEP_SUMMARY
+            done
+            echo "" >> $GITHUB_STEP_SUMMARY
+          
+            echo "Re-spinning containers" >> $GITHUB_STEP_SUMMARY 
+            gh workflow -R ${{ github.repository_owner }}/keycloak-rel respin-containers.yml >> $GITHUB_STEP_SUMMARY 
+            gh run -R ${{ github.repository_owner }}/keycloak-rel list --workflow="respin-containers.yml" --json url | jq -r '.[].url' >> $GITHUB_STEP_SUMMARY
+          fi
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}

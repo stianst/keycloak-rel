@@ -2,13 +2,6 @@ name: Re-spin Containers
 
 on:
   workflow_dispatch:
-    inputs:
-      version:
-        description: 'The version to respin'
-        required: true
-      previous-version:
-        description: 'Old version'
-        required: true
 
 concurrency: rel-${{ github.ref }}
 
@@ -16,6 +9,20 @@ jobs:
 
   env:
     uses: ./.github/workflows/x-env.yml
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
+  versions:
+    runs-on: ubuntu-latest
+    outputs:
+      lastVersion: ${{ steps.versions.lastVersion }}
+      previousVersion: ${{ steps.versions.previousVersion }}
+    steps:
+      - id: versions
+        run: |
+          LAST_TWO_VERSIONS=$(gh release -R keycloak/keycloak list --json tagName | jq -r '.[].tagName' | grep -v nightly | sort -V -r | head -n 2)
+          LAST_VERSION=$( echo $LAST_TWO_VERSIONS | head -n 1)
+          PREVIOUS_VERSION=$( echo $LAST_TWO_VERSIONS | tail -n 1)
 
   respin-number:
     runs-on: ubuntu-latest
@@ -45,7 +52,8 @@ jobs:
     needs: [respin-number]
     steps:
       - run: |
-          echo "Version: ${{ inputs.version }}  " >> $GITHUB_STEP_SUMMARY
+          echo "Version: ${{ needs.env.outputs.last_version }}  " >> $GITHUB_STEP_SUMMARY
+          echo "Previous version: ${{ needs.env.outputs.previous-version }}  " >> $GITHUB_STEP_SUMMARY
           echo "Respin: ${{ needs.respin-number.outputs.respin }}" >> $GITHUB_STEP_SUMMARY
 
   keycloak-container:
@@ -54,10 +62,11 @@ jobs:
     needs: [env, respin-number]
     with:
       gh-org: ${{ needs.env.outputs.gh-org }}
+      keycloak-rel-org: ${{ needs.env.outputs.keycloak-rel-org }}
       quay-org: ${{ needs.env.outputs.quay-org }}
       docker-org: ${{ needs.env.outputs.docker-org }}
-      version: ${{ github.event.inputs.version }}
-      tag: ${{ github.event.inputs.version }}
+      version: ${{ needs.env.outputs.last_version }}
+      tag: ${{ needs.env.outputs.last_version }}
       respin: ${{ needs.respin-number.outputs.respin }}
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}
@@ -74,9 +83,9 @@ jobs:
       gh-org: ${{ needs.env.outputs.gh-org }}
       quay-org: ${{ needs.env.outputs.quay-org }}
       docker-org: ${{ needs.env.outputs.docker-org }}
-      version: ${{ github.event.inputs.version }}
-      previous-version: ${{ github.event.inputs.previous-version }}
-      tag: ${{ github.event.inputs.version }}
+      version: ${{ needs.env.outputs.last_version }}
+      previous-version: ${{ needs.env.outputs.previous-version }}
+      tag: ${{ needs.env.outputs.last_version }}
       respin: ${{ needs.respin-number.outputs.respin }}
     secrets:
       GH_TOKEN: ${{ secrets.GH_TOKEN }}

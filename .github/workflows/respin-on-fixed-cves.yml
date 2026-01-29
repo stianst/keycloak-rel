@@ -5,7 +5,14 @@ permissions:
   actions: write
 
 jobs:
+
+  env:
+    uses: ./.github/workflows/x-env.yml
+    secrets:
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
+
   respin:
+    needs: env
     runs-on: ubuntu-latest
     # if: github.repository_owner == 'keycloak-rel'
     steps:
